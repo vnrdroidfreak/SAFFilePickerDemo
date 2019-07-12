@@ -20,7 +20,7 @@ public class SAFCapturer {
     private Uri outputUri = null;
     private boolean outputAsUri = true;
 
-    public enum Type {
+    public static enum Type {
         photoCapture(14), videoCapture(15), audioCapture(16);
         private int value;
 
@@ -58,10 +58,21 @@ public class SAFCapturer {
         public void onMediaCaptureFailed(final Exception e);
     }
 
+    /**
+     * Capturer from fragment
+     * @param activity
+     * @param fragment
+     * @return SAFCapturer
+     */
     public static SAFCapturer with(Activity activity, Fragment fragment) {
         return new SAFCapturer(activity, fragment);
     }
 
+    /**
+     * Capturer from activity
+     * @param activity
+     * @return SAFCapturer
+     */
     public static SAFCapturer with(Activity activity) {
         return new SAFCapturer(activity, null);
     }
@@ -69,11 +80,6 @@ public class SAFCapturer {
     private SAFCapturer(@NonNull Activity activity, @Nullable Fragment fragment) {
         this.activity = activity;
         this.fragment = fragment;
-        try {
-            this.listener = (Listener) fragment;
-        } catch (Exception e) {
-
-        }
 
         if (fragment != null) {
             this.permissionHelper = new PermissionHelper(
@@ -99,12 +105,21 @@ public class SAFCapturer {
     }
 
 
+    /**
+     * Set listener for capturer callback
+     * @param pickerListener
+     * @return
+     */
     public SAFCapturer setListener(Listener pickerListener) {
         this.listener = pickerListener;
         return this;
     }
 
-
+    /**
+     *
+     * @param outputAsUri
+     * @return
+     */
     public SAFCapturer setOutputAsUri(boolean outputAsUri) {
         this.outputAsUri = outputAsUri;
         return this;

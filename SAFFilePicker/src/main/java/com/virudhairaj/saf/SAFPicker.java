@@ -24,7 +24,7 @@ public class SAFPicker {
     private boolean outputAsUri = true;
 
 
-    private static enum Type {
+    public static enum Type {
         file(10), photo(11), video(12), audio(13);
         private int value;
 
@@ -71,11 +71,6 @@ public class SAFPicker {
     private SAFPicker(@NonNull Activity activity, @Nullable Fragment fragment) {
         this.activity = activity;
         this.fragment = fragment;
-        try {
-            this.listener = (Listener) fragment;
-        } catch (Exception e) {
-
-        }
 
         if (fragment != null) {
             this.permissionHelper = new PermissionHelper(
