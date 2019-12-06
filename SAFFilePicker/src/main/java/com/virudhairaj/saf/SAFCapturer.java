@@ -7,59 +7,59 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
+
+import com.virudhairaj.saf.fileprovider.EasyFileProvider;
+
+import java.io.File;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 public class SAFCapturer {
 
     private Activity activity;
     private Fragment fragment;
-    private Listener listener = null;
+    private Callback callback = null;
     private PermissionHelper permissionHelper;
+    private PermissionCallback permissionCallback;
     private Uri outputUri = null;
-    private boolean outputAsUri = true;
+    private File outputFile = null;
 
-    public static enum Type {
-        photoCapture(14), videoCapture(15), audioCapture(16);
-        private int value;
+    private SAFCapturer(@NonNull Activity activity, @Nullable Fragment fragment) {
+        this.activity = activity;
+        this.fragment = fragment;
 
-        private Type(int value) {
-            this.value = value;
+        Callback tmpCallback=(Callback)(fragment!=null?fragment:activity);
+        if (tmpCallback!=null)this.callback=tmpCallback;
+
+        PermissionCallback tmpPermissionCallback=(PermissionCallback)(fragment!=null?fragment:activity);
+        if (tmpPermissionCallback!=null)this.permissionCallback=tmpPermissionCallback;
+
+        if (fragment != null) {
+            this.permissionHelper = new PermissionHelper(
+                    fragment,
+                    new String[]{
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    },
+                    300
+            );
+        } else {
+            this.permissionHelper = new PermissionHelper(
+                    activity,
+                    new String[]{
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    },
+                    300
+            );
         }
-
-        public int getValue() {
-            return value;
-        }
-
-        public static boolean isType(int value) {
-            return value == photoCapture.getValue() || value == videoCapture.getValue() || value == audioCapture.getValue();
-        }
-
-        public static Type parse(int value) {
-            switch (value) {
-                case 14:
-                    return photoCapture;
-                case 15:
-                    return videoCapture;
-                default:
-                    return audioCapture;
-            }
-        }
-    }
-
-    public static interface Listener {
-        /**
-         * @param type
-         * @param path can be uri or file path
-         */
-        public void onMediaCaptured(final @NonNull Type type, final String path);
-
-        public void onMediaCaptureFailed(final Exception e);
     }
 
     /**
      * Capturer from fragment
+     *
      * @param activity
      * @param fragment
      * @return SAFCapturer
@@ -70,6 +70,7 @@ public class SAFCapturer {
 
     /**
      * Capturer from activity
+     *
      * @param activity
      * @return SAFCapturer
      */
@@ -77,58 +78,28 @@ public class SAFCapturer {
         return new SAFCapturer(activity, null);
     }
 
-    private SAFCapturer(@NonNull Activity activity, @Nullable Fragment fragment) {
-        this.activity = activity;
-        this.fragment = fragment;
-
-        if (fragment != null) {
-            this.permissionHelper = new PermissionHelper(
-                    fragment,
-                    new String[]{
-//                        Manifest.permission.CAMERA,
-                            Manifest.permission.READ_EXTERNAL_STORAGE,
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    },
-                    300
-            );
-        } else {
-            this.permissionHelper = new PermissionHelper(
-                    activity,
-                    new String[]{
-//                        Manifest.permission.CAMERA,
-                            Manifest.permission.READ_EXTERNAL_STORAGE,
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    },
-                    300
-            );
-        }
-    }
-
-
     /**
      * Set listener for capturer callback
-     * @param pickerListener
-     * @return
-     */
-    public SAFCapturer setListener(Listener pickerListener) {
-        this.listener = pickerListener;
-        return this;
-    }
-
-    /**
      *
-     * @param outputAsUri
+     * @param callback
      * @return
      */
-    public SAFCapturer setOutputAsUri(boolean outputAsUri) {
-        this.outputAsUri = outputAsUri;
+    public SAFCapturer setCallback(Callback callback) {
+        this.callback = callback;
         return this;
     }
 
+    public SAFCapturer setPermissionCallback(com.virudhairaj.saf.PermissionCallback permissionCallback) {
+        this.permissionCallback = permissionCallback;
+        return this;
+    }
 
-    public void startCaptureIntent(@NonNull final Type type, @NonNull final Uri output) {
+    public void startCaptureIntent(@NonNull final Type type, @NonNull final File output) {
         if (type == null || output == null) return;
-        this.outputUri = output;
+
+        this.outputFile = output;
+        this.outputUri = EasyFileProvider.with(activity).getUriBy(outputFile);
+
         permissionHelper.request(new PermissionHelper.PermissionCallback() {
             @Override
             public void onPermissionGranted() {
@@ -138,7 +109,7 @@ public class SAFCapturer {
                                         MediaStore.Audio.Media.RECORD_SOUND_ACTION
                 );
                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, FileUtils.getFilePathFromUri(activity, outputUri));
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, outputUri);
                 try {
                     intent.putExtra("return-data", true);
                     if (fragment != null) {
@@ -158,12 +129,12 @@ public class SAFCapturer {
 
             @Override
             public void onPermissionDenied() {
-
+                if (permissionCallback!=null)permissionCallback.onPermissionDenied();
             }
 
             @Override
             public void onPermissionDeniedBySystem() {
-
+                if (permissionCallback!=null)permissionCallback.onPermissionDeniedBySystem();
             }
         });
     }
@@ -171,23 +142,59 @@ public class SAFCapturer {
     @SuppressLint("ObsoleteSdkInt")
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (resultCode != Activity.RESULT_OK) {
-            if (listener != null) listener.onMediaCaptureFailed(new Exception("Cancelled"));
+            if (callback != null) callback.onMediaCaptureFailed(new Exception("Cancelled"));
             return;
         }
         try {
             boolean isCaptureType = Type.isType(requestCode);
             if (isCaptureType && outputUri != null) {
-                listener.onMediaCaptured(Type.parse(requestCode), outputAsUri ? outputUri.toString() : FileUtils.getFilePathFromUri(activity, outputUri));
+                try {
+                    callback.onMediaCaptured(Type.parse(requestCode), new SAFFile(activity, outputUri), outputFile);
+                } catch (Exception e1) {
+                    callback.onMediaCaptureFailed(e1);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            if (listener != null) listener.onMediaCaptureFailed(e);
+            if (callback != null) callback.onMediaCaptureFailed(e);
         }
     }
 
     //for fragment
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         permissionHelper.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    public enum Type {
+        photoCapture(14), videoCapture(15), audioCapture(16);
+        public final int value;
+
+        Type(int value) {
+            this.value = value;
+        }
+
+        public static boolean isType(int value) {
+            return value == photoCapture.value || value == videoCapture.value || value == audioCapture.value;
+        }
+
+        public static Type parse(int value) {
+            switch (value) {
+                case 14:
+                    return photoCapture;
+                case 15:
+                    return videoCapture;
+                default:
+                    return audioCapture;
+            }
+        }
+
+    }
+
+    public interface Callback {
+
+        void onMediaCaptured(final @NonNull Type type, @NonNull final SAFFile safFile, @NonNull final File outputFile);
+
+        void onMediaCaptureFailed(final Exception e);
     }
 
 }
