@@ -16,6 +16,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+/**
+ * This class is responsible for android capture intent and its data handling
+ */
+
 public class SAFCapturer {
 
     private Activity activity;
@@ -25,17 +29,27 @@ public class SAFCapturer {
     private PermissionCallback permissionCallback;
     private Uri outputUri = null;
     private File outputFile = null;
+    private final AppExecutors executors;
 
     private SAFCapturer(@NonNull Activity activity, @Nullable Fragment fragment) {
         this.activity = activity;
         this.fragment = fragment;
+        this.executors = new AppExecutors();
 
-        Callback tmpCallback=(Callback)(fragment!=null?fragment:activity);
-        if (tmpCallback!=null)this.callback=tmpCallback;
+        try {
+            Callback tmpCallback = (Callback) (fragment != null && fragment instanceof Callback ? fragment : activity);
+            //check callback implemented in fragment or activity. if yes get that references
+            if (tmpCallback != null) this.callback = tmpCallback;
+        }catch (Exception e){
 
-        PermissionCallback tmpPermissionCallback=(PermissionCallback)(fragment!=null?fragment:activity);
-        if (tmpPermissionCallback!=null)this.permissionCallback=tmpPermissionCallback;
+        }
+        try {
+            PermissionCallback tmpPermissionCallback = (PermissionCallback) (fragment != null ? fragment : activity);
+            //check callback implemented in fragment or activity. if yes get that references
+            if (tmpPermissionCallback != null) this.permissionCallback = tmpPermissionCallback;
+        }catch (Exception e){
 
+        }
         if (fragment != null) {
             this.permissionHelper = new PermissionHelper(
                     fragment,
@@ -100,7 +114,8 @@ public class SAFCapturer {
         this.outputFile = output;
         this.outputUri = EasyFileProvider.with(activity).getUriBy(outputFile);
 
-        permissionHelper.request(new PermissionHelper.PermissionCallback() {
+
+        final PermissionHelper.PermissionCallback pCallback = new PermissionHelper.PermissionCallback() {
             @Override
             public void onPermissionGranted() {
                 Intent intent = new Intent(
@@ -117,6 +132,7 @@ public class SAFCapturer {
                     } else {
                         activity.startActivityForResult(intent, type.value);
                     }
+//                    if (callback != null) callback.onCaptureStatusChanged(true);
                 } catch (ActivityNotFoundException e) {
                     e.printStackTrace();
                 }
@@ -129,35 +145,76 @@ public class SAFCapturer {
 
             @Override
             public void onPermissionDenied() {
-                if (permissionCallback!=null)permissionCallback.onPermissionDenied();
+                if (permissionCallback != null) permissionCallback.onPermissionDenied();
             }
 
             @Override
             public void onPermissionDeniedBySystem() {
-                if (permissionCallback!=null)permissionCallback.onPermissionDeniedBySystem();
+                if (permissionCallback != null) permissionCallback.onPermissionDeniedBySystem();
             }
-        });
+        };
+        permissionHelper.request(pCallback);
     }
 
     @SuppressLint("ObsoleteSdkInt")
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    public void onActivityResult(final int requestCode, final int resultCode, final @Nullable Intent data) {
         if (resultCode != Activity.RESULT_OK) {
             if (callback != null) callback.onMediaCaptureFailed(new Exception("Cancelled"));
             return;
         }
-        try {
-            boolean isCaptureType = Type.isType(requestCode);
-            if (isCaptureType && outputUri != null) {
+
+        executors.diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                if (callback != null) {
+                    executors.mainThread().execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onCaptureStatusChanged(true);
+                        }
+                    });
+                }
                 try {
-                    callback.onMediaCaptured(Type.parse(requestCode), new SAFFile(activity, outputUri), outputFile);
-                } catch (Exception e1) {
-                    callback.onMediaCaptureFailed(e1);
+                    boolean isCaptureType = Type.isType(requestCode);
+                    if (isCaptureType && outputUri != null) {
+                        try {
+                            final SAFFile file = new SAFFile(activity, outputUri);
+                            if (callback != null) {
+                                executors.mainThread().execute(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        callback.onCaptureStatusChanged(false);
+                                        callback.onMediaCaptured(Type.parse(requestCode), file, outputFile);
+                                    }
+                                });
+                            }
+                        } catch (final Exception e) {
+                            if (callback != null) {
+                                executors.mainThread().execute(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        callback.onCaptureStatusChanged(false);
+                                        callback.onMediaCaptureFailed(e);
+                                    }
+                                });
+                            }
+                        }
+
+                    }
+                } catch (final Exception e) {
+                    e.printStackTrace();
+                    if (callback != null) {
+                        executors.mainThread().execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                callback.onCaptureStatusChanged(false);
+                                callback.onMediaCaptureFailed(e);
+                            }
+                        });
+                    }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (callback != null) callback.onMediaCaptureFailed(e);
-        }
+        });
     }
 
     //for fragment
@@ -165,7 +222,7 @@ public class SAFCapturer {
         permissionHelper.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    public enum Type {
+    public static enum Type {
         photoCapture(14), videoCapture(15), audioCapture(16);
         public final int value;
 
@@ -190,11 +247,13 @@ public class SAFCapturer {
 
     }
 
-    public interface Callback {
+    public static interface Callback {
 
         void onMediaCaptured(final @NonNull Type type, @NonNull final SAFFile safFile, @NonNull final File outputFile);
 
         void onMediaCaptureFailed(final Exception e);
+
+        void onCaptureStatusChanged(final boolean isStarted);
     }
 
 }

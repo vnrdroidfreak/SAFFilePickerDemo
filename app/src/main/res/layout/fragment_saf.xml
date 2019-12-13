@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="10dp"
+    android:minWidth="300dp"
+    android:padding="10dp"
+    app:cardCornerRadius="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minWidth="300dp"
+        android:orientation="vertical">
+
+        <RadioGroup
+            android:id="@+id/rdoGrpType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rdoPicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:text="Picker" />
+
+            <RadioButton
+                android:id="@+id/rdoCapture"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:layoutDirection="rtl"
+                android:text="Capture"
+                android:textDirection="rtl" />
+
+        </RadioGroup>
+
+        <LinearLayout
+            android:id="@+id/layoutPicker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Picker media type" />
+
+
+            <RadioGroup
+                android:id="@+id/rdoGrpPickerMedia"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical">
+
+                <RadioButton
+                    android:id="@+id/rdoPickerText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Text        (text/*)" />
+
+                <RadioButton
+                    android:id="@+id/rdoPickerPhoto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Photo       (image/*)" />
+
+                <RadioButton
+                    android:id="@+id/rdoPickerAudio"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Audio       (audio/*)" />
+
+                <RadioButton
+                    android:id="@+id/rdoPickerVideo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Video       (video/*)" />
+
+                <RadioButton
+                    android:id="@+id/rdoPickerApplication"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Application (application/*)" />
+
+                <RadioButton
+                    android:id="@+id/rdoPickerMediaFile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="File        (file/*)" />
+
+            </RadioGroup>
+
+
+            <CheckBox
+                android:id="@+id/chkMultiSelect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Multi selection" />
+            <Button
+                android:id="@+id/btnPicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="10dp"
+                android:text="Pick" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutCapture"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Capture media type" />
+            <RadioGroup
+                android:id="@+id/rdoGrpCaptureMedia"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical">
+
+                <RadioButton
+                    android:id="@+id/rdoCaptureMediaPhoto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Photo" />
+
+                <RadioButton
+                    android:id="@+id/rdoCaptureMediaAudio"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Audio" />
+
+                <RadioButton
+                    android:id="@+id/rdoCaptureMediaVideo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Video" />
+
+
+            </RadioGroup>
+
+            <Button
+                android:id="@+id/btnCapture"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="10dp"
+                android:text="Capture" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center_horizontal" />
+
+
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
+

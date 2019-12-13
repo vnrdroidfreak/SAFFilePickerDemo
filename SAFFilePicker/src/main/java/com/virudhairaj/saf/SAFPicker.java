@@ -16,6 +16,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+/**
+ * this class is responsible for android picker intent and its data handling
+ */
 public class SAFPicker {
 
     private Activity activity;
@@ -24,18 +27,33 @@ public class SAFPicker {
     private PermissionHelper permissionHelper;
     private boolean hasMultiSelection = false;
     private PermissionCallback permissionCallback = null;
+    private final AppExecutors executors;
 
+    /**
+     * default constructor.
+     * @param activity
+     * @param fragment
+     */
     private SAFPicker(@NonNull Activity activity, @Nullable Fragment fragment) {
         this.activity = activity;
         this.fragment = fragment;
+        this.executors = new AppExecutors();
 
 
-        Callback tmpCallback = (Callback) (fragment != null ? fragment : activity);
-        if (tmpCallback != null) this.callback = tmpCallback;
+        try {
+            Callback tmpCallback = (Callback) (fragment != null ? fragment : activity);
+            //check callback implemented in fragment or activity. if yes get that references
+            if (tmpCallback != null) this.callback = tmpCallback;
+        }catch (Exception e){
 
-        PermissionCallback tmpPermissionCallback = (PermissionCallback) (fragment != null ? fragment : activity);
-        if (tmpPermissionCallback != null) this.permissionCallback = tmpPermissionCallback;
+        }
+        try {
+            PermissionCallback tmpPermissionCallback = (PermissionCallback) (fragment != null ? fragment : activity);
+            //check callback implemented in fragment or activity. if yes get that references
+            if (tmpPermissionCallback != null) this.permissionCallback = tmpPermissionCallback;
+        }catch (Exception e){
 
+        }
         if (fragment != null) {
             this.permissionHelper = new PermissionHelper(
                     fragment,
@@ -57,32 +75,64 @@ public class SAFPicker {
         }
     }
 
+    /**
+     * Initialization
+     * @param activity
+     * @param fragment
+     * @return
+     */
     public static SAFPicker with(Activity activity, Fragment fragment) {
         return new SAFPicker(activity, fragment);
     }
 
+    /**
+     * Initialization
+     * @param activity
+     * @return
+     */
     public static SAFPicker with(Activity activity) {
         return new SAFPicker(activity, null);
     }
 
+    /**
+     * This function set callback manually. For effective use need to call before startPickerIntent()
+     *
+     * @param callback
+     * @return
+     */
     public SAFPicker setCallback(Callback callback) {
         this.callback = callback;
         return this;
     }
 
+    /** This option configures picker intent has multi selection
+     * @param hasMultiSelection
+     * @return
+     */
     public SAFPicker enableMultiSelection(boolean hasMultiSelection) {
         this.hasMultiSelection = hasMultiSelection;
         return this;
     }
 
+    /**
+     * Invoke this when you need to start picker
+     *
+     * @param type
+     */
     public void startPickerIntent(final Type type) {
         startPickerIntent(type, hasMultiSelection);
     }
 
+    /**
+     * Invoke this when you need to start picker
+     *
+     * @param type
+     * @param hasMultiSelection
+     */
     public void startPickerIntent(final Type type, final boolean hasMultiSelection) {
         if (type == null) return;
         this.hasMultiSelection = hasMultiSelection;
-        permissionHelper.request(new PermissionHelper.PermissionCallback() {
+        PermissionHelper.PermissionCallback pCallback = new PermissionHelper.PermissionCallback() {
             @Override
             public void onPermissionGranted() {
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -101,10 +151,12 @@ public class SAFPicker {
                     fragment.startActivityForResult(
                             Intent.createChooser(intent, "Select " + type.name()),
                             type.code);
+//                    if (callback != null) callback.onPickerStatusChanged(true);
                 } else if (activity != null) {
                     activity.startActivityForResult(
                             Intent.createChooser(intent, "Select " + type.name()),
                             type.code);
+//                    if (callback != null) callback.onPickerStatusChanged(true);
                 }
             }
 
@@ -123,63 +175,109 @@ public class SAFPicker {
                 if (permissionCallback != null) permissionCallback.onPermissionDeniedBySystem();
             }
 
+        };
+        permissionHelper.request(pCallback);
+    }
+
+
+    /**
+     * Need to invoked in  onActivityResult()  of fragment or activity you have implemented
+     *
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
+
+    @SuppressLint("ObsoleteSdkInt")
+    public void onActivityResult(final int requestCode, final int resultCode, final @Nullable Intent data) {
+        if (resultCode != Activity.RESULT_OK) {
+            if (callback != null) {
+                callback.onFilePickerFailed(new Exception("Cancelled"));
+            }
+            return;
+        }
+        executors.diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                if (callback != null) {
+                    executors.mainThread().execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onPickerStatusChanged(true);
+                        }
+                    });
+                }
+
+                try {
+                    boolean isPickerType = Type.isType(requestCode);
+                    if (isPickerType) {
+                        final ArrayList<SAFFile> uris = new ArrayList<>();
+                        if (data != null) {
+                            if (data.getDataString() != null) {
+                                Uri uri = Uri.parse(data.getDataString());
+                                uris.add(new SAFFile(activity, uri));
+                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                                if (data.getClipData() != null) {
+                                    ClipData clipData = data.getClipData();
+                                    for (int i = 0; i < clipData.getItemCount(); i++) {
+                                        Uri uri = clipData.getItemAt(i).getUri();
+                                        uris.add(new SAFFile(activity, uri));
+                                    }
+                                }
+                            }
+
+                            if (data.hasExtra("uris")) {
+                                ArrayList<Uri> paths = data.getParcelableArrayListExtra("uris");
+                                for (Uri uri : paths) {
+                                    uris.add(new SAFFile(activity, uri));
+                                }
+                            } else if (data.hasExtra("data")) {
+                                ArrayList<Uri> paths = data.getParcelableArrayListExtra("data");
+                                for (Uri uri : paths) {
+                                    uris.add(new SAFFile(activity, uri));
+                                }
+                            }
+                        }
+                        if (callback != null) {
+                            executors.mainThread().execute(new Runnable() {
+                                @Override
+                                public void run() {
+                                    callback.onPickerStatusChanged(false);
+                                    callback.onFilePicked(Type.parse(requestCode), uris);
+                                }
+                            });
+                        }
+                    }
+                } catch (final Exception e) {
+                    e.printStackTrace();
+                    if (callback != null) {
+                        executors.mainThread().execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                callback.onPickerStatusChanged(false);
+                                callback.onFilePickerFailed(e);
+                            }
+                        });
+                    }
+
+                }
+
+            }
         });
     }
 
-    @SuppressLint("ObsoleteSdkInt")
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (resultCode != Activity.RESULT_OK) {
-            if (callback != null)
-                callback.onFilePickerFailed(new Exception("Cancelled"));
-            return;
-        }
-        try {
-            boolean isPickerType = Type.isType(requestCode);
-            if (isPickerType) {
-                ArrayList<SAFFile> uris = new ArrayList<>();
-                if (data != null) {
-                    if (data.getDataString() != null) {
-                        Uri uri = Uri.parse(data.getDataString());
-                        uris.add(new SAFFile(activity, uri));
-                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                        if (data.getClipData() != null) {
-                            ClipData clipData = data.getClipData();
-                            for (int i = 0; i < clipData.getItemCount(); i++) {
-                                Uri uri = clipData.getItemAt(i).getUri();
-                                uris.add(new SAFFile(activity, uri));
-                            }
-                        }
-                    }
-
-                    if (data.hasExtra("uris")) {
-                        ArrayList<Uri> paths = data.getParcelableArrayListExtra("uris");
-                        for (Uri uri : paths) {
-                            uris.add(new SAFFile(activity, uri));
-                        }
-                    } else if (data.hasExtra("data")) {
-                        ArrayList<Uri> paths = data.getParcelableArrayListExtra("data");
-                        for (Uri uri : paths) {
-                            uris.add(new SAFFile(activity, uri));
-                        }
-                    }
-                }
-                if (callback != null) {
-                    callback.onFilePicked(Type.parse(requestCode), uris);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (callback != null) callback.onFilePickerFailed(e);
-
-        }
-    }
-
-    //for fragment
+    /**
+     * Need to invoked in  onRequestPermissionsResult()  of fragment or activity you have implemented
+     *
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         permissionHelper.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    public enum Type {
+    public static enum Type {
         file(10, "*/*"),
         photo(11, "image/*"),
         video(12, "video/*"),
@@ -217,10 +315,12 @@ public class SAFPicker {
         }
     }
 
-    public interface Callback {
+    public static interface Callback {
         void onFilePicked(final @NonNull Type type, final List<SAFFile> safFiles);
 
         void onFilePickerFailed(final Exception e);
+
+        void onPickerStatusChanged(final boolean isStarted);
     }
 
 

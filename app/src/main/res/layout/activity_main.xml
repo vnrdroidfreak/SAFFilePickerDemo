@@ -4,95 +4,18 @@
     android:layout_height="match_parent"
     android:padding="10dp">
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/layoutCapture"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/btnAdd"/>
+
+
+    <Button
+        android:id="@+id/btnAdd"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="10dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btnPhotoCapture"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="PhotoCapture" />
-
-            <Button
-                android:id="@+id/btnVideoCapture"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="VideoCapture" />
-
-            <Button
-                android:id="@+id/btnAudioCapture"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="AudioCapture" />
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/layoutPicker"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/layoutCapture"
-        android:layout_marginTop="20dp"
-        android:padding="10dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="false"
-            android:orientation="vertical">
-
-            <Button
-                android:id="@+id/btnFilePicker"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="FilePicker" />
-
-            <Button
-                android:id="@+id/btnPhotoPicker"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="PhotoPicker" />
-
-            <Button
-                android:id="@+id/btnVideoPicker"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="VideoPicker" />
-
-            <Button
-                android:id="@+id/btnAudioPicker"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="AudioPicker" />
-
-            <Button
-                android:id="@+id/btnApplicationPicker"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ApplicationPicker" />
-
-            <Button
-                android:id="@+id/btnTextPicker"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="TextPicker" />
-
-            <CheckBox
-                android:id="@+id/chkMultiSelect"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="MultiSelection" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+        android:layout_alignParentBottom="true"
+        android:text="Add" />
 
 </RelativeLayout>
