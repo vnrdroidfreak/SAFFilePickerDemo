@@ -2,11 +2,12 @@
 
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="5dp"
-    android:padding="10dp"
-    app:cardCornerRadius="10dp">
+    app:cardCornerRadius="10dp"
+    app:cardPreventCornerOverlap="false">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -15,47 +16,66 @@
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/imgFile"
-            android:layout_margin="5dp"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            app:srcCompat="@drawable/ic_preview"
             android:layout_centerVertical="true"
             android:scaleType="centerCrop" />
 
-        <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/txtFileName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
+        <LinearLayout
             android:layout_toEndOf="@+id/imgFile"
             android:layout_toRightOf="@+id/imgFile"
+            android:layout_toStartOf="@id/imgOpen"
+            android:layout_toLeftOf="@id/imgOpen"
             android:paddingLeft="10dp"
             android:paddingStart="10dp"
-            android:text="Matt Carby" />
-
-
-        <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/txtMime"
-            android:layout_width="wrap_content"
+            android:id="@+id/layoutText"
+            android:layout_centerVertical="true"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/txtFileName"
-            android:layout_gravity="center"
-            android:layout_toEndOf="@+id/imgFile"
-            android:layout_toRightOf="@+id/imgFile"
-            android:paddingLeft="10dp"
-            android:paddingStart="10dp"
-            android:text="mime" />
+            android:orientation="vertical">
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/txtFileName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Matt Carby"/>
 
-        <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/txtSize"
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/txtMime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="mime" />
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/txtSize"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginStart="10dp"
+                    android:text="100" />
+            </LinearLayout>
+        </LinearLayout>
+
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/imgOpen"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/txtFileName"
-            android:layout_gravity="center"
-            android:layout_toEndOf="@+id/txtMime"
-            android:layout_toRightOf="@+id/imgFile"
-            android:paddingLeft="5dp"
-            android:paddingStart="5dp"
-            android:text="100" />
+            android:layout_height="80dp"
+            android:foreground="?attr/selectableItemBackground"
+            android:background="@color/grey"
+            android:layout_centerVertical="true"
+            android:paddingHorizontal="5dp"
+            app:srcCompat="@drawable/ic_open"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            tools:ignore="UnusedAttribute" />
     </RelativeLayout>
 
 

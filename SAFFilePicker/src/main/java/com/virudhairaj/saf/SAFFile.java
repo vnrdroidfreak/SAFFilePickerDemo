@@ -32,6 +32,20 @@ public class SAFFile {
         mime = context.getContentResolver().getType(uri);
     }
 
+    public  String getFormattedSize() {
+        if (size==null)return "";
+
+        String s = size < 0 ? "-" : "";
+        long b = size == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(size);
+        return b < 1000L ? size + " B"
+                : b < 999_950L ? String.format("%s%.1f kB", s, b / 1e3)
+                : (b /= 1000) < 999_950L ? String.format("%s%.1f MB", s, b / 1e3)
+                : (b /= 1000) < 999_950L ? String.format("%s%.1f GB", s, b / 1e3)
+                : (b /= 1000) < 999_950L ? String.format("%s%.1f TB", s, b / 1e3)
+                : (b /= 1000) < 999_950L ? String.format("%s%.1f PB", s, b / 1e3)
+                : String.format("%s%.1f EB", s, b / 1e6);
+    }
+
     public Intent getPreviewIntent(){
         return new Intent(Intent.ACTION_VIEW)//
                 .setDataAndType(uri,

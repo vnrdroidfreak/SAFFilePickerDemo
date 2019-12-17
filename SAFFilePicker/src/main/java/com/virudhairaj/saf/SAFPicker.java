@@ -26,11 +26,12 @@ public class SAFPicker {
     private Callback callback = null;
     private PermissionHelper permissionHelper;
     private boolean hasMultiSelection = false;
-    private PermissionCallback permissionCallback = null;
+    private PermissionListener permissionListener = null;
     private final AppExecutors executors;
 
     /**
      * default constructor.
+     *
      * @param activity
      * @param fragment
      */
@@ -44,14 +45,14 @@ public class SAFPicker {
             Callback tmpCallback = (Callback) (fragment != null ? fragment : activity);
             //check callback implemented in fragment or activity. if yes get that references
             if (tmpCallback != null) this.callback = tmpCallback;
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
         try {
-            PermissionCallback tmpPermissionCallback = (PermissionCallback) (fragment != null ? fragment : activity);
+            PermissionListener tmpPermissionListener = (PermissionListener) (fragment != null ? fragment : activity);
             //check callback implemented in fragment or activity. if yes get that references
-            if (tmpPermissionCallback != null) this.permissionCallback = tmpPermissionCallback;
-        }catch (Exception e){
+            if (tmpPermissionListener != null) this.permissionListener = tmpPermissionListener;
+        } catch (Exception e) {
 
         }
         if (fragment != null) {
@@ -77,6 +78,7 @@ public class SAFPicker {
 
     /**
      * Initialization
+     *
      * @param activity
      * @param fragment
      * @return
@@ -87,6 +89,7 @@ public class SAFPicker {
 
     /**
      * Initialization
+     *
      * @param activity
      * @return
      */
@@ -105,7 +108,20 @@ public class SAFPicker {
         return this;
     }
 
-    /** This option configures picker intent has multi selection
+    /**
+     * emmits permission denied callback
+     *
+     * @param permissionListener
+     * @return
+     */
+    public SAFPicker setPermissionListener(PermissionListener permissionListener) {
+        this.permissionListener = permissionListener;
+        return this;
+    }
+
+    /**
+     * This option configures picker intent has multi selection
+     *
      * @param hasMultiSelection
      * @return
      */
@@ -151,12 +167,10 @@ public class SAFPicker {
                     fragment.startActivityForResult(
                             Intent.createChooser(intent, "Select " + type.name()),
                             type.code);
-//                    if (callback != null) callback.onPickerStatusChanged(true);
                 } else if (activity != null) {
                     activity.startActivityForResult(
                             Intent.createChooser(intent, "Select " + type.name()),
                             type.code);
-//                    if (callback != null) callback.onPickerStatusChanged(true);
                 }
             }
 
@@ -167,12 +181,14 @@ public class SAFPicker {
 
             @Override
             public void onPermissionDenied() {
-                if (permissionCallback != null) permissionCallback.onPermissionDenied();
+                if (permissionListener != null)
+                    permissionListener.onPermissionDenied(permissionHelper, this);
             }
 
             @Override
             public void onPermissionDeniedBySystem() {
-                if (permissionCallback != null) permissionCallback.onPermissionDeniedBySystem();
+                if (permissionListener != null)
+                    permissionListener.onPermissionDeniedBySystem(permissionHelper, this);
             }
 
         };
@@ -199,14 +215,6 @@ public class SAFPicker {
         executors.diskIO().execute(new Runnable() {
             @Override
             public void run() {
-                if (callback != null) {
-                    executors.mainThread().execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            callback.onPickerStatusChanged(true);
-                        }
-                    });
-                }
 
                 try {
                     boolean isPickerType = Type.isType(requestCode);
@@ -215,26 +223,39 @@ public class SAFPicker {
                         if (data != null) {
                             if (data.getDataString() != null) {
                                 Uri uri = Uri.parse(data.getDataString());
+                                updateProgress(1);
                                 uris.add(new SAFFile(activity, uri));
+                                updateProgress(100);
                             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                                 if (data.getClipData() != null) {
                                     ClipData clipData = data.getClipData();
-                                    for (int i = 0; i < clipData.getItemCount(); i++) {
+                                    final int total = clipData.getItemCount();
+                                    for (int i = 0; i < total; i++) {
                                         Uri uri = clipData.getItemAt(i).getUri();
                                         uris.add(new SAFFile(activity, uri));
+                                        int progress = (int) (((i + 1) / (float) total) * 100);
+                                        updateProgress(progress);
                                     }
                                 }
                             }
 
                             if (data.hasExtra("uris")) {
                                 ArrayList<Uri> paths = data.getParcelableArrayListExtra("uris");
-                                for (Uri uri : paths) {
+                                final int total = paths.size();
+                                for (int i = 0; i < total; i++) {
+                                    Uri uri = paths.get(i);
                                     uris.add(new SAFFile(activity, uri));
+                                    int progress = (int) (((i + 1) / (float) total) * 100);
+                                    updateProgress(progress);
                                 }
                             } else if (data.hasExtra("data")) {
                                 ArrayList<Uri> paths = data.getParcelableArrayListExtra("data");
-                                for (Uri uri : paths) {
+                                final int total = paths.size();
+                                for (int i = 0; i < total; i++) {
+                                    Uri uri = paths.get(i);
                                     uris.add(new SAFFile(activity, uri));
+                                    int progress = (int) (((i + 1) / (float) total) * 100);
+                                    updateProgress(progress);
                                 }
                             }
                         }
@@ -242,7 +263,6 @@ public class SAFPicker {
                             executors.mainThread().execute(new Runnable() {
                                 @Override
                                 public void run() {
-                                    callback.onPickerStatusChanged(false);
                                     callback.onFilePicked(Type.parse(requestCode), uris);
                                 }
                             });
@@ -254,7 +274,7 @@ public class SAFPicker {
                         executors.mainThread().execute(new Runnable() {
                             @Override
                             public void run() {
-                                callback.onPickerStatusChanged(false);
+                                updateProgress(100);
                                 callback.onFilePickerFailed(e);
                             }
                         });
@@ -264,6 +284,17 @@ public class SAFPicker {
 
             }
         });
+    }
+
+    private void updateProgress(final int progress) {
+        if (callback != null) {
+            executors.mainThread().execute(new Runnable() {
+                @Override
+                public void run() {
+                    callback.onPickerProgress(progress);
+                }
+            });
+        }
     }
 
     /**
@@ -320,7 +351,7 @@ public class SAFPicker {
 
         void onFilePickerFailed(final Exception e);
 
-        void onPickerStatusChanged(final boolean isStarted);
+        void onPickerProgress(final int progress);
     }
 
 

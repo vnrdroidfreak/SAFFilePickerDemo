@@ -2,12 +2,13 @@
 
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="10dp"
     android:minWidth="300dp"
-    android:padding="10dp"
-    app:cardCornerRadius="10dp">
+    app:cardCornerRadius="10dp"
+    app:cardPreventCornerOverlap="false">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,6 +17,8 @@
         android:orientation="vertical">
 
         <RadioGroup
+            android:background="@color/grey"
+            android:padding="10dp"
             android:id="@+id/rdoGrpType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -63,7 +66,8 @@
                     android:id="@+id/rdoPickerText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Text        (text/*)" />
+                    android:text="Text        (text/*)"
+                    android:checked="true"/>
 
                 <RadioButton
                     android:id="@+id/rdoPickerPhoto"
@@ -87,7 +91,7 @@
                     android:id="@+id/rdoPickerApplication"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Application (application/*)" />
+                    android:text="App         (application/*)" />
 
                 <RadioButton
                     android:id="@+id/rdoPickerMediaFile"
@@ -99,17 +103,12 @@
 
 
             <CheckBox
+                android:layout_marginTop="10dp"
                 android:id="@+id/chkMultiSelect"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:checked="true"
                 android:text="Multi selection" />
-            <Button
-                android:id="@+id/btnPicker"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:layout_marginTop="10dp"
-                android:text="Pick" />
 
         </LinearLayout>
 
@@ -135,6 +134,7 @@
                     android:id="@+id/rdoCaptureMediaPhoto"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:checked="true"
                     android:text="Photo" />
 
                 <RadioButton
@@ -152,20 +152,39 @@
 
             </RadioGroup>
 
-            <Button
-                android:id="@+id/btnCapture"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:layout_marginTop="10dp"
-                android:text="Capture" />
+
         </LinearLayout>
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_gravity="center_horizontal" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@color/grey"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:indeterminate="false"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"/>
+
+            <Button
+                android:id="@+id/btnStart"
+                android:background="?attr/selectableItemBackground"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Start"
+                tools:targetApi="m"
+                tools:ignore="UnusedAttribute" />
+
+        </LinearLayout>
+
+
 
 
 

@@ -26,11 +26,16 @@ public class SAFCapturer {
     private Fragment fragment;
     private Callback callback = null;
     private PermissionHelper permissionHelper;
-    private PermissionCallback permissionCallback;
+    private PermissionListener permissionListener;
     private Uri outputUri = null;
     private File outputFile = null;
     private final AppExecutors executors;
 
+    /**
+     * default constructor
+     * @param activity
+     * @param fragment
+     */
     private SAFCapturer(@NonNull Activity activity, @Nullable Fragment fragment) {
         this.activity = activity;
         this.fragment = fragment;
@@ -44,9 +49,9 @@ public class SAFCapturer {
 
         }
         try {
-            PermissionCallback tmpPermissionCallback = (PermissionCallback) (fragment != null ? fragment : activity);
+            PermissionListener tmpPermissionListener = (PermissionListener) (fragment != null ? fragment : activity);
             //check callback implemented in fragment or activity. if yes get that references
-            if (tmpPermissionCallback != null) this.permissionCallback = tmpPermissionCallback;
+            if (tmpPermissionListener != null) this.permissionListener = tmpPermissionListener;
         }catch (Exception e){
 
         }
@@ -103,8 +108,13 @@ public class SAFCapturer {
         return this;
     }
 
-    public SAFCapturer setPermissionCallback(com.virudhairaj.saf.PermissionCallback permissionCallback) {
-        this.permissionCallback = permissionCallback;
+    /**
+     * emmits permission dinied callback
+     * @param permissionListener
+     * @return
+     */
+    public SAFCapturer setPermissionListener(PermissionListener permissionListener) {
+        this.permissionListener = permissionListener;
         return this;
     }
 
@@ -132,7 +142,7 @@ public class SAFCapturer {
                     } else {
                         activity.startActivityForResult(intent, type.value);
                     }
-//                    if (callback != null) callback.onCaptureStatusChanged(true);
+//                    if (callback != null) callback.onCaptureProgress(true);
                 } catch (ActivityNotFoundException e) {
                     e.printStackTrace();
                 }
@@ -145,12 +155,12 @@ public class SAFCapturer {
 
             @Override
             public void onPermissionDenied() {
-                if (permissionCallback != null) permissionCallback.onPermissionDenied();
+                if (permissionListener != null) permissionListener.onPermissionDenied(permissionHelper,this);
             }
 
             @Override
             public void onPermissionDeniedBySystem() {
-                if (permissionCallback != null) permissionCallback.onPermissionDeniedBySystem();
+                if (permissionListener != null) permissionListener.onPermissionDeniedBySystem(permissionHelper,this);
             }
         };
         permissionHelper.request(pCallback);
@@ -170,7 +180,7 @@ public class SAFCapturer {
                     executors.mainThread().execute(new Runnable() {
                         @Override
                         public void run() {
-                            callback.onCaptureStatusChanged(true);
+                            callback.onCaptureProgress(true);
                         }
                     });
                 }
@@ -183,7 +193,7 @@ public class SAFCapturer {
                                 executors.mainThread().execute(new Runnable() {
                                     @Override
                                     public void run() {
-                                        callback.onCaptureStatusChanged(false);
+                                        callback.onCaptureProgress(false);
                                         callback.onMediaCaptured(Type.parse(requestCode), file, outputFile);
                                     }
                                 });
@@ -193,7 +203,7 @@ public class SAFCapturer {
                                 executors.mainThread().execute(new Runnable() {
                                     @Override
                                     public void run() {
-                                        callback.onCaptureStatusChanged(false);
+                                        callback.onCaptureProgress(false);
                                         callback.onMediaCaptureFailed(e);
                                     }
                                 });
@@ -207,7 +217,7 @@ public class SAFCapturer {
                         executors.mainThread().execute(new Runnable() {
                             @Override
                             public void run() {
-                                callback.onCaptureStatusChanged(false);
+                                callback.onCaptureProgress(false);
                                 callback.onMediaCaptureFailed(e);
                             }
                         });
@@ -253,7 +263,7 @@ public class SAFCapturer {
 
         void onMediaCaptureFailed(final Exception e);
 
-        void onCaptureStatusChanged(final boolean isStarted);
+        void onCaptureProgress(final boolean isStarted);
     }
 
 }
