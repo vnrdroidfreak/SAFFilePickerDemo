@@ -45,14 +45,14 @@ public class SAFCapturer {
             Callback tmpCallback = (Callback) (fragment != null && fragment instanceof Callback ? fragment : activity);
             //check callback implemented in fragment or activity. if yes get that references
             if (tmpCallback != null) this.callback = tmpCallback;
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
         try {
             PermissionListener tmpPermissionListener = (PermissionListener) (fragment != null ? fragment : activity);
             //check callback implemented in fragment or activity. if yes get that references
             if (tmpPermissionListener != null) this.permissionListener = tmpPermissionListener;
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
         if (fragment != null) {
@@ -110,6 +110,7 @@ public class SAFCapturer {
 
     /**
      * emmits permission dinied callback
+     *
      * @param permissionListener
      * @return
      */
@@ -155,12 +156,14 @@ public class SAFCapturer {
 
             @Override
             public void onPermissionDenied() {
-                if (permissionListener != null) permissionListener.onPermissionDenied(permissionHelper,this);
+                if (permissionListener != null)
+                    permissionListener.onPermissionDenied(permissionHelper, this);
             }
 
             @Override
             public void onPermissionDeniedBySystem() {
-                if (permissionListener != null) permissionListener.onPermissionDeniedBySystem(permissionHelper,this);
+                if (permissionListener != null)
+                    permissionListener.onPermissionDeniedBySystem(permissionHelper, this);
             }
         };
         permissionHelper.request(pCallback);
@@ -169,7 +172,8 @@ public class SAFCapturer {
     @SuppressLint("ObsoleteSdkInt")
     public void onActivityResult(final int requestCode, final int resultCode, final @Nullable Intent data) {
         if (resultCode != Activity.RESULT_OK) {
-            if (callback != null) callback.onMediaCaptureFailed(new Exception("Cancelled"));
+            if (callback != null && Type.isType(requestCode))
+                callback.onMediaCaptureFailed(new Exception("Cancelled"));
             return;
         }
 

@@ -207,7 +207,7 @@ public class SAFPicker {
     @SuppressLint("ObsoleteSdkInt")
     public void onActivityResult(final int requestCode, final int resultCode, final @Nullable Intent data) {
         if (resultCode != Activity.RESULT_OK) {
-            if (callback != null) {
+            if (callback != null&& Type.isType(requestCode)) {
                 callback.onFilePickerFailed(new Exception("Cancelled"));
             }
             return;
